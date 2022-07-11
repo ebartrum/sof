@@ -384,12 +384,16 @@ class FaceSegSampler():
             uv = self.uv.expand(self.batch_size, -1, -1)
 
             batch_preds = []
+            batch_nocs = []
 
             for batch_idx in range(0, num_samples, self.batch_size):
 
-                predictions, _ = self.model(
+                predictions, _, nocs_map = self.model(
                     cam2world[batch_idx:batch_idx+self.batch_size], emb, intrinsics, uv)
+
                 predictions = predictions.view(self.batch_size, 128, 128, -1)
+                nocs_map = nocs_map.view(self.batch_size, 128, 128, -1)
+
                 predictions = F.interpolate(
                     predictions.permute(0, 3, 1, 2),
                     size=(self.img_size, self.img_size),
@@ -406,11 +410,13 @@ class FaceSegSampler():
                         N, 1, H, W).cpu()
 
                 batch_preds.append(pred)
+                batch_nocs.append(nocs_map)
 
             pred = torch.cat(batch_preds, dim=0).squeeze(1)
             pred = pred[:return_num_samples].numpy()
+            nocs_maps = torch.cat(batch_nocs, 0)
 
-            return pred
+            return pred, nocs_maps
 
     def sample_ins_fix_pose(self, num_samples=25, return_feat=False):
         """ Sample num_samples instances with fix camera pose

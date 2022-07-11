@@ -560,4 +560,4 @@ class SOFModel(nn.Module):
 
             self.logs.append(("histogram", "embedding", self.z, 1000))
 
-        return novel_views, depth_maps
+        return novel_views, depth_maps, points_xyz
