@@ -136,7 +136,7 @@ def _rand_cam_uniform(R=1.2,
     return cam2world
 
 
-def _rand_cam_spiral(R=1.2,
+def _rand_cam_azimuth(R=1.2,
                      num_samples=15,
                      cam_center=None,
                      look_at=None,
@@ -144,29 +144,15 @@ def _rand_cam_spiral(R=1.2,
 
     cam2world = []
 
-    # linear rotate
     linear_R = np.linalg.norm(cam_center-look_at) + R
-    theta = []
-    theta_range = [0.0, -0.55, 0.0, 0.55, 0.0]
-    for i in range(len(theta_range)-1):
-        theta.append(np.linspace(
-            theta_range[i], theta_range[i+1], num=num_samples//8))
-    theta = np.concatenate(theta)
+    theta_range = [-0.45, 0.45]
+    theta = np.linspace(theta_range[0], theta_range[1], num=num_samples)
     x = linear_R*np.sin(theta)
     y = np.zeros_like(x)
     z = linear_R*np.cos(theta)
     cam_T = np.stack([x, y, z], axis=1) + look_at.reshape((1, 3))
     for i in range(len(theta)):
         cam2world.append(_campos2matrix(cam_T[i], look_at))
-
-     # spiral rotate
-    t = np.linspace(0, 4*np.pi, num_samples//2, endpoint=True)
-    spiral_R = np.asarray([R-0.2, R, R-0.2]) / 2
-    for k in range(len(t)):
-        cam_T = np.array([np.cos(t[k]), -np.sin(t[k]), -
-                          np.sin(0.5*t[k])]) * spiral_R
-        cam_T = cam_T[[1, 2, 0]] + cam_center
-        cam2world.append(_campos2matrix(cam_T, look_at))
 
     cam2world = np.asarray(cam2world)
     return cam2world
@@ -189,8 +175,8 @@ def _get_random_poses(
                 cam_center=cam_center,
                 look_at=look_at,
                 sample_range=sample_range)
-        elif mode == 'spiral':
-            return _rand_cam_spiral(
+        elif mode == 'azimuth':
+            return _rand_cam_azimuth(
                 sample_radius, num_samples,
                 cam_center=cam_center,
                 look_at=look_at,
@@ -203,7 +189,7 @@ def _get_random_poses(
                 sample_range=sample_range)
         else:
             raise ValueError('Unsupported camera path: %s, \
-                must be one in [sphere, plane, spiral, uniform].' % (mode))
+                must be one in [sphere, plane, azimuth, uniform].' % (mode))
 
     assert cam_pos is not None, 'Campose not specified'
     cam2world = []
