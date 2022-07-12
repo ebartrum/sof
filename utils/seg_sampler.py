@@ -145,7 +145,9 @@ def _rand_cam_azimuth(R=1.2,
     cam2world = []
 
     linear_R = np.linalg.norm(cam_center-look_at) + R
-    theta_range = [-0.45, 0.45]
+    if sample_range is None:
+        sample_range = [-0.45, 0.45]
+    theta_range = sample_range
     theta = np.linspace(theta_range[0], theta_range[1], num=num_samples)
     x = linear_R*np.sin(theta)
     y = np.zeros_like(x)
@@ -181,6 +183,12 @@ def _get_random_poses(
                 cam_center=cam_center,
                 look_at=look_at,
                 sample_range=sample_range)
+        elif mode == 'frontal':
+            return _rand_cam_azimuth(
+                sample_radius, num_samples,
+                cam_center=cam_center,
+                look_at=look_at,
+                sample_range=[0,0])
         elif mode == 'uniform':
             return _rand_cam_uniform(
                 sample_radius, num_samples,
@@ -189,7 +197,7 @@ def _get_random_poses(
                 sample_range=sample_range)
         else:
             raise ValueError('Unsupported camera path: %s, \
-                must be one in [sphere, plane, azimuth, uniform].' % (mode))
+                must be one in [sphere, plane, azimuth, frontal, uniform].' % (mode))
 
     assert cam_pos is not None, 'Campose not specified'
     cam2world = []
