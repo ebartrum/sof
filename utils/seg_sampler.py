@@ -159,6 +159,36 @@ def _rand_cam_azimuth(R=1.2,
     cam2world = np.asarray(cam2world)
     return cam2world
 
+def _rand_cam_centred(R=1.2,
+                     num_samples=15,
+                     cam_center=None,
+                     look_at=None,
+                     sample_range=None):
+
+    cam2world = []
+
+    linear_R = np.linalg.norm(cam_center-look_at) + R
+    if sample_range is None:
+        sample_range = [-0.45, 0.45]
+    theta_range = sample_range
+    theta = np.linspace(theta_range[0], theta_range[1], num=num_samples)
+
+    azi = np.random.normal(loc=0.0, scale=0.3, size=theta.shape) # sample a random azi
+    ele = np.random.normal(loc=0.0, scale=0.15, size=theta.shape) # sample a random ele
+
+    x = linear_R*np.sin(azi)*np.cos(ele)
+    y = -linear_R*np.sin(ele)
+    z = linear_R*np.cos(azi)*np.cos(ele)
+
+    rotated_unit_vec = np.stack([x, y, z], axis=1)
+
+    cam_T = rotated_unit_vec + look_at.reshape((1, 3))
+    for i in range(len(theta)):
+        cam2world.append(_campos2matrix(cam_T[i], look_at))
+
+    cam2world = np.asarray(cam2world)
+    return cam2world
+
 
 def _get_random_poses(
         sample_radius, num_samples, mode,
@@ -183,6 +213,11 @@ def _get_random_poses(
                 cam_center=cam_center,
                 look_at=look_at,
                 sample_range=sample_range)
+        elif mode == 'random':
+            return _rand_cam_centred(
+                sample_radius, num_samples,
+                cam_center=cam_center,
+                look_at=look_at)
         elif mode == 'frontal':
             return _rand_cam_azimuth(
                 sample_radius, num_samples,
